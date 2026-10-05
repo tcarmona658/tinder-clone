@@ -5,6 +5,48 @@ const ageValue = document.getElementById('ageValue');
 const distanceValue = document.getElementById('distanceValue');
 const matchBanner = document.getElementById('matchBanner');
 
+const SUPABASE_URL = window.SUPABASE_URL || 'https://TU_PROYECTO.supabase.co';
+const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'TU_ANON_KEY';
+
+let supabase = null;
+
+if (window.supabase) {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} else {
+  console.warn('Supabase no está cargado. Cambia los valores de SUPABASE_URL y SUPABASE_ANON_KEY en index.html.');
+}
+
+async function cargarPerfiles() {
+  if (!supabase) return;
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .limit(10);
+
+  if (error) {
+    console.error('Error al cargar perfiles:', error);
+    return;
+  }
+
+  console.log('Perfiles desde Supabase:', data);
+}
+
+async function guardarLike(userId, likedUserId) {
+  if (!supabase) return;
+
+  const { data, error } = await supabase
+    .from('likes')
+    .insert([{ user_id: userId, liked_user_id: likedUserId }]);
+
+  if (error) {
+    console.error('Error guardando like:', error);
+    return;
+  }
+
+  console.log('Like guardado:', data);
+}
+
 let currentIndex = 0;
 
 function updateAgeDistanceLabels() {
@@ -49,7 +91,11 @@ function nextCard(direction) {
   }
 }
 
-document.getElementById('likeBtn').addEventListener('click', () => nextCard('right'));
+document.getElementById('likeBtn').addEventListener('click', () => {
+  nextCard('right');
+  guardarLike(1, 2);
+});
+
 document.getElementById('dislikeBtn').addEventListener('click', () => nextCard('left'));
 document.getElementById('superlikeBtn').addEventListener('click', () => {
   const activeCard = cards[currentIndex];
@@ -98,3 +144,4 @@ cards.forEach((card) => {
 matchBanner.style.display = 'none';
 updateAgeDistanceLabels();
 updateCards();
+cargarPerfiles();
