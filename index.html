@@ -1,139 +1,161 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tinder Style - Red Social de Parejas</title>
-  <link rel="stylesheet" href="styles.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hot Dating - Conoce Gente Nueva</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="user-mini">
-        <div class="avatar avatar-small"></div>
-        <div>
-          <h4>Tu perfil</h4>
-          <p>@maria</p>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🔥</span>
+                <h1>Hot Dating</h1>
+            </div>
+            <div class="header-actions">
+                <button class="btn-icon" onclick="openProfile()">👤</button>
+                <button class="btn-icon" onclick="openMessages()">💬</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Cards View -->
+            <div id="cardsView" class="view active">
+                <div class="cards-container">
+                    <div id="cardsStack" class="cards-stack"></div>
+                    
+                    <!-- Buttons -->
+                    <div class="action-buttons">
+                        <button class="btn-action btn-reject" onclick="rejectCard()">
+                            <span class="icon">✕</span>
+                            <span>Pasar</span>
+                        </button>
+                        <button class="btn-action btn-superlike" onclick="superlikeCard()">
+                            <span class="icon">⭐</span>
+                            <span>Super</span>
+                        </button>
+                        <button class="btn-action btn-like" onclick="likeCard()">
+                            <span class="icon">❤️</span>
+                            <span>Like</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Matches View -->
+            <div id="matchesView" class="view">
+                <div class="matches-container">
+                    <h2>Tus Matches</h2>
+                    <div id="matchesList" class="matches-list"></div>
+                </div>
+            </div>
+
+            <!-- Profile View -->
+            <div id="profileView" class="view">
+                <div class="profile-container">
+                    <button class="btn-back" onclick="backToCards()">← Volver</button>
+                    <div id="profileContent"></div>
+                </div>
+            </div>
+
+            <!-- Messages View -->
+            <div id="messagesView" class="view">
+                <div class="messages-container">
+                    <button class="btn-back" onclick="backToCards()">← Volver</button>
+                    <div id="messagesList" class="messages-list"></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Navigation -->
+        <nav class="navigation">
+            <button class="nav-btn" onclick="showView('cardsView')" data-view="cardsView">
+                <span class="nav-icon">🔥</span>
+                <span class="nav-label">Descubrir</span>
+            </button>
+            <button class="nav-btn" onclick="showView('matchesView')" data-view="matchesView">
+                <span class="nav-icon">💕</span>
+                <span class="nav-label">Matches</span>
+            </button>
+            <button class="nav-btn" onclick="showView('profileView')" data-view="profileView">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label">Perfil</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Match Modal -->
+    <div id="matchModal" class="modal hidden">
+        <div class="modal-content match-modal">
+            <div class="match-header">¡ES UN MATCH! 💕</div>
+            <div class="match-avatars">
+                <img id="matchImg1" src="" alt="Tu foto">
+                <span class="match-heart">💕</span>
+                <img id="matchImg2" src="" alt="Su foto">
+            </div>
+            <h2 id="matchName"></h2>
+            <button class="btn-primary" onclick="startChat()">Enviar Mensaje</button>
+            <button class="btn-secondary" onclick="closeModal()">Continuar</button>
         </div>
-      </div>
+    </div>
 
-      <div class="filters">
-        <h3>Filtros</h3>
-        <label>Edad
-          <input type="range" min="18" max="60" value="28" id="ageRange" />
-          <span id="ageValue">28</span>
-        </label>
-        <label>Distancia
-          <input type="range" min="1" max="100" value="25" id="distanceRange" />
-          <span id="distanceValue">25 km</span>
-        </label>
-      </div>
-
-      <button class="btn btn-primary">Aplicar filtros</button>
-    </aside>
-
-    <main class="main-view">
-      <header class="topbar">
-        <div class="brand">tinder</div>
-        <div class="top-icons">
-          <span>💬</span>
-          <span>⚙️</span>
+    <!-- Chat Modal -->
+    <div id="chatModal" class="modal hidden">
+        <div class="modal-content chat-modal">
+            <div class="chat-header">
+                <button class="btn-back" onclick="closeChat()">←</button>
+                <div class="chat-info">
+                    <img id="chatAvatar" src="" alt="Avatar">
+                    <div>
+                        <h3 id="chatName"></h3>
+                        <span class="status">● En línea</span>
+                    </div>
+                </div>
+            </div>
+            <div id="chatMessages" class="chat-messages"></div>
+            <div class="chat-input-area">
+                <input type="text" id="chatInput" placeholder="Escribe un mensaje..." onkeypress="handleChatKey(event)">
+                <button class="btn-send" onclick="sendMessage()">Enviar</button>
+            </div>
         </div>
-      </header>
+    </div>
 
-      <section class="match-banner" id="matchBanner">
-        <strong>¡Nuevo match!</strong>
-        <span>Laura te ha dado like</span>
-      </section>
-
-      <div class="card-stack" id="cardStack">
-        <article class="profile-card active" data-name="Laura" data-age="28">
-          <div class="card-image image-1"></div>
-          <div class="card-info">
-            <h2>Laura, 28</h2>
-            <p>Madrid · Diseñadora</p>
-          </div>
-        </article>
-
-        <article class="profile-card" data-name="Mateo" data-age="31">
-          <div class="card-image image-2"></div>
-          <div class="card-info">
-            <h2>Mateo, 31</h2>
-            <p>Barcelona · Fotógrafo</p>
-          </div>
-        </article>
-
-        <article class="profile-card" data-name="Sofía" data-age="26">
-          <div class="card-image image-3"></div>
-          <div class="card-info">
-            <h2>Sofía, 26</h2>
-            <p>Valencia · Psicóloga</p>
-          </div>
-        </article>
-      </div>
-
-      <div class="controls">
-        <button class="action dislike" id="dislikeBtn">✕</button>
-        <button class="action superlike" id="superlikeBtn">★</button>
-        <button class="action like" id="likeBtn">♥</button>
-      </div>
-    </main>
-
-    <aside class="chat-panel">
-      <div class="chat-header">
-        <h3>Matches</h3>
-      </div>
-
-      <div class="match-item active-match">
-        <div class="avatar avatar-1"></div>
-        <div>
-          <strong>Laura</strong>
-          <p>¡Me encantas!</p>
+    <!-- Edit Profile Modal -->
+    <div id="editProfileModal" class="modal hidden">
+        <div class="modal-content profile-modal">
+            <h2>Editar Perfil</h2>
+            <form onsubmit="saveProfile(event)">
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" id="profileName" required>
+                </div>
+                <div class="form-group">
+                    <label>Edad</label>
+                    <input type="number" id="profileAge" required min="18">
+                </div>
+                <div class="form-group">
+                    <label>Ciudad</label>
+                    <input type="text" id="profileCity" required>
+                </div>
+                <div class="form-group">
+                    <label>Foto (URL)</label>
+                    <input type="text" id="profilePhoto" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea id="profileBio" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Guardar</button>
+                    <button type="button" class="btn-secondary" onclick="closeEditProfile()">Cancelar</button>
+                </div>
+            </form>
         </div>
-      </div>
+    </div>
 
-      <div class="match-item">
-        <div class="avatar avatar-2"></div>
-        <div>
-          <strong>Mateo</strong>
-          <p>¿Te gusta viajar?</p>
-        </div>
-      </div>
-
-      <div class="chat-box">
-        <div class="message received">Hola 😊</div>
-        <div class="message sent">¡Hola! Qué tal?</div>
-        <div class="message received">Me gusta tu perfil</div>
-        <div class="message sent">Gracias 😄</div>
-      </div>
-
-      <div class="chat-input">
-        <input type="text" placeholder="Escribe un mensaje..." />
-        <button>Enviar</button>
-      </div>
-    </aside>
-
-    <aside class="profile-panel">
-      <div class="profile-header">
-        <div class="avatar avatar-large"></div>
-        <h3>María</h3>
-      </div>
-
-      <div class="profile-info">
-        <p><strong>Edad:</strong> 27</p>
-        <p><strong>Ciudad:</strong> Madrid</p>
-        <p><strong>Intereses:</strong> Viajar, cine, música</p>
-      </div>
-
-      <button class="btn btn-primary">Editar perfil</button>
-    </aside>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    window.SUPABASE_URL = 'https://TU_PROYECTO.supabase.co';
-    window.SUPABASE_ANON_KEY = 'TU_ANON_KEY';
-  </script>
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
