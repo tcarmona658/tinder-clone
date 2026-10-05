@@ -1,446 +1,545 @@
-// Datos de usuarios
-const users = [
-    {
-        id: 1,
-        name: 'Laura',
-        age: 26,
-        city: 'Madrid',
-        photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&h=600&fit=crop',
-        bio: 'Amante de viajes y buena comida 🌍✈️',
-        verified: true
-    },
-    {
-        id: 2,
-        name: 'Sofía',
-        age: 24,
-        city: 'Barcelona',
-        photo: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500&h=600&fit=crop',
-        bio: 'Yoga, café y películas',
-        verified: true
-    },
-    {
-        id: 3,
-        name: 'Mateo',
-        age: 28,
-        city: 'Valencia',
-        photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&h=600&fit=crop',
-        bio: 'Deportista y amigo de aventuras',
-        verified: true
-    },
-    {
-        id: 4,
-        name: 'Valeria',
-        age: 25,
-        city: 'Madrid',
-        photo: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=500&h=600&fit=crop',
-        bio: 'Fotógrafa | Cocinera | Viajera',
-        verified: false
-    },
-    {
-        id: 5,
-        name: 'Carlos',
-        age: 29,
-        city: 'Sevilla',
-        photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&h=600&fit=crop',
-        bio: 'Músico y amante de la naturaleza',
-        verified: true
-    },
-    {
-        id: 6,
-        name: 'Claudia',
-        age: 27,
-        city: 'Bilbao',
-        photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&h=600&fit=crop',
-        bio: 'Chef | Poeta | Soñadora',
-        verified: true
-    }
-];
-
-// Estado de la app
-let currentUserIndex = 0;
-let myProfile = JSON.parse(localStorage.getItem('myProfile')) || {
-    name: 'Toni',
-    age: 28,
-    city: 'Madrid',
-    photo: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=500&h=600&fit=crop',
-    bio: 'Desarrollador | Viajero | Amante del café',
-    likes: [],
-    matches: []
-};
-
-let currentChatUser = null;
-let messages = JSON.parse(localStorage.getItem('messages')) || {};
-
-// Inicializar la app
-window.addEventListener('load', () => {
-    renderCards();
-    setupNavigationButtons();
-});
-
-// Renderizar tarjetas
-function renderCards() {
-    const cardsStack = document.getElementById('cardsStack');
-    cardsStack.innerHTML = '';
-
-    users.forEach((user, index) => {
-        if (index < currentUserIndex) return;
-
-        const card = document.createElement('div');
-        card.className = 'card';
-
-        if (index === currentUserIndex) {
-            card.classList.add('active');
-        } else if (index === currentUserIndex + 1) {
-            card.classList.add('next');
-        } else if (index === currentUserIndex + 2) {
-            card.classList.add('next-next');
-        }
-
-        card.innerHTML = `
-            <img src="${user.photo}" alt="${user.name}" class="card-image">
-            <div class="card-info">
-                <div class="card-name">${user.name}, ${user.age}</div>
-                <div class="card-details">
-                    <span>📍 ${user.city}</span>
-                    ${user.verified ? '<span class="card-badge">✓ Verificado</span>' : ''}
-                </div>
-                <div style="color: #b0b0b0; margin-top: 8px; font-size: 14px;">${user.bio}</div>
-            </div>
-        `;
-
-        // Eventos de arrastre
-        let startX = 0;
-        let currentX = 0;
-
-        card.addEventListener('mousedown', (e) => {
-            if (index !== currentUserIndex) return;
-            startX = e.clientX;
-            card.style.cursor = 'grabbing';
-        });
-
-        card.addEventListener('mousemove', (e) => {
-            if (index !== currentUserIndex || !startX) return;
-            currentX = e.clientX - startX;
-            card.style.transform = `translateX(${currentX}px) rotate(${currentX / 10}deg)`;
-        });
-
-        card.addEventListener('mouseup', () => {
-            if (index !== currentUserIndex) return;
-            
-            if (currentX > 100) {
-                likeCard();
-            } else if (currentX < -100) {
-                rejectCard();
-            } else {
-                card.style.transform = '';
-            }
-            startX = 0;
-            currentX = 0;
-            card.style.cursor = 'grab';
-        });
-
-        cardsStack.appendChild(card);
-    });
-
-    if (currentUserIndex >= users.length) {
-        const emptyState = document.createElement('div');
-        emptyState.style.cssText = `
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: #b0b0b0;
-        `;
-        emptyState.innerHTML = `
-            <span style="font-size: 64px; margin-bottom: 16px;">🎉</span>
-            <p>¡Ya has visto todos los perfiles!</p>
-            <p style="font-size: 14px; margin-top: 8px;">Vuelve pronto para nuevas conexiones</p>
-        `;
-        cardsStack.appendChild(emptyState);
-    }
+* {
+  box-sizing: border-box;
 }
 
-// Like card
-function likeCard() {
-    if (currentUserIndex >= users.length) return;
-
-    const card = document.querySelector('.card.active');
-    const user = users[currentUserIndex];
-
-    // Guardar like
-    myProfile.likes.push(user.id);
-
-    // Probabilidad de match (50%)
-    if (Math.random() > 0.5) {
-        myProfile.matches.push(user);
-        showMatchModal(user);
-    }
-
-    localStorage.setItem('myProfile', JSON.stringify(myProfile));
-
-    card.classList.add('swiped-right');
-    setTimeout(() => {
-        currentUserIndex++;
-        renderCards();
-    }, 500);
+:root {
+  --bg: #0b1020;
+  --panel: rgba(17, 25, 41, 0.9);
+  --panels: rgba(24, 35, 60, 0.85);
+  --glass: rgba(255, 255, 255, 0.06);
+  --line: rgba(255, 255, 255, 0.09);
+  --text: #f5f7fb;
+  --muted: #97a0b6;
+  --pink: #ff4d7d;
+  --pink-2: #ff7a91;
+  --purple: #8b5cf6;
+  --cyan: #4dd7ff;
+  --green: #41d392;
 }
 
-// Reject card
-function rejectCard() {
-    if (currentUserIndex >= users.length) return;
-
-    const card = document.querySelector('.card.active');
-    card.classList.add('swiped-left');
-    setTimeout(() => {
-        currentUserIndex++;
-        renderCards();
-    }, 500);
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(255, 77, 125, 0.18), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(77, 215, 255, 0.12), transparent 30%),
+    var(--bg);
+  color: var(--text);
+  font-family: Inter, Arial, sans-serif;
 }
 
-// Superlike card
-function superlikeCard() {
-    if (currentUserIndex >= users.length) return;
-
-    const user = users[currentUserIndex];
-    myProfile.likes.push(user.id);
-    myProfile.matches.push(user);
-    localStorage.setItem('myProfile', JSON.stringify(myProfile));
-
-    showMatchModal(user);
-
-    const card = document.querySelector('.card.active');
-    card.style.animation = 'pulse 0.5s ease';
-    setTimeout(() => {
-        currentUserIndex++;
-        renderCards();
-    }, 500);
+button, input {
+  font: inherit;
 }
 
-// Mostrar modal de match
-function showMatchModal(user) {
-    document.getElementById('matchImg1').src = myProfile.photo;
-    document.getElementById('matchImg2').src = user.photo;
-    document.getElementById('matchName').textContent = `¡Tú y ${user.name} se gustan mutuamente!`;
-    document.getElementById('matchModal').classList.remove('hidden');
+.app-shell {
+  max-width: 1600px;
+  min-height: 100vh;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 260px 1fr 360px;
+  background: rgba(9, 13, 23, 0.85);
+  backdrop-filter: blur(12px);
 }
 
-// Iniciar chat
-function startChat() {
-    const user = users[currentUserIndex - 1] || users[0];
-    currentChatUser = user;
-    
-    if (!messages[user.id]) {
-        messages[user.id] = [];
-    }
-
-    openChat(user);
-    closeModal();
+.sidebar {
+  background: rgba(12, 17, 30, 0.9);
+  border-right: 1px solid var(--line);
+  padding: 18px 16px;
 }
 
-// Abrir chat
-function openChat(user) {
-    document.getElementById('chatName').textContent = user.name;
-    document.getElementById('chatAvatar').src = user.photo;
-    
-    const chatMessages = document.getElementById('chatMessages');
-    chatMessages.innerHTML = '';
-    
-    (messages[user.id] || []).forEach(msg => {
-        const msgEl = document.createElement('div');
-        msgEl.className = `chat-message ${msg.type}`;
-        msgEl.textContent = msg.text;
-        chatMessages.appendChild(msgEl);
-    });
-
-    document.getElementById('chatModal').classList.remove('hidden');
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+.left-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-// Enviar mensaje
-function sendMessage() {
-    const input = document.getElementById('chatInput');
-    const text = input.value.trim();
-    
-    if (!text || !currentChatUser) return;
-
-    if (!messages[currentChatUser.id]) {
-        messages[currentChatUser.id] = [];
-    }
-
-    messages[currentChatUser.id].push({ type: 'sent', text });
-    localStorage.setItem('messages', JSON.stringify(messages));
-
-    const chatMessages = document.getElementById('chatMessages');
-    const msgEl = document.createElement('div');
-    msgEl.className = 'chat-message sent';
-    msgEl.textContent = text;
-    chatMessages.appendChild(msgEl);
-
-    input.value = '';
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-
-    // Auto-respuesta
-    setTimeout(() => {
-        const replies = [
-            '¡Me encantó tu perfil! 😊',
-            'Hola! Qué tal estás? 🙌',
-            '¡Qué conexión! Hablemos más 💬',
-            'Me encantaría conocerte 🌟'
-        ];
-        const reply = replies[Math.floor(Math.random() * replies.length)];
-        messages[currentChatUser.id].push({ type: 'received', text: reply });
-        localStorage.setItem('messages', JSON.stringify(messages));
-
-        const replyEl = document.createElement('div');
-        replyEl.className = 'chat-message received';
-        replyEl.textContent = reply;
-        chatMessages.appendChild(replyEl);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }, 1000);
+.right-panel {
+  border-left: 1px solid var(--line);
+  border-right: none;
 }
 
-// Manejar tecla Enter en chat
-function handleChatKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-    }
+.brand-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 6px 20px;
 }
 
-// Cerrar chat
-function closeChat() {
-    document.getElementById('chatModal').classList.add('hidden');
-    currentChatUser = null;
+.brand-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--pink), var(--purple));
+  font-weight: 800;
+  font-size: 22px;
 }
 
-// Abrir perfil
-function openProfile() {
-    showView('profileView');
-    renderProfile();
+.brand-name {
+  font-weight: 800;
+  letter-spacing: 0.5px;
 }
 
-// Renderizar perfil
-function renderProfile() {
-    const profileContent = document.getElementById('profileContent');
-    profileContent.innerHTML = `
-        <div class="profile-card">
-            <div class="profile-header">
-                <img src="${myProfile.photo}" alt="${myProfile.name}" class="profile-avatar">
-                <div class="profile-basic">
-                    <div class="profile-name">${myProfile.name}, ${myProfile.age}</div>
-                    <div class="profile-location">📍 ${myProfile.city}</div>
-                    <div class="profile-stats">
-                        <div class="profile-stat">
-                            <span class="profile-stat-value">${myProfile.likes.length}</span>
-                            <span>Likes</span>
-                        </div>
-                        <div class="profile-stat">
-                            <span class="profile-stat-value">${myProfile.matches.length}</span>
-                            <span>Matches</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="profile-bio">${myProfile.bio}</div>
-            <button class="btn-primary" style="width: 100%; margin-bottom: 12px;" onclick="editProfile()">Editar Perfil</button>
-        </div>
-    `;
+.brand-sub {
+  color: var(--muted);
+  font-size: 12px;
 }
 
-// Editar perfil
-function editProfile() {
-    document.getElementById('profileName').value = myProfile.name;
-    document.getElementById('profileAge').value = myProfile.age;
-    document.getElementById('profileCity').value = myProfile.city;
-    document.getElementById('profilePhoto').value = myProfile.photo;
-    document.getElementById('profileBio').value = myProfile.bio;
-    document.getElementById('editProfileModal').classList.remove('hidden');
+.user-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 12px;
 }
 
-// Guardar perfil
-function saveProfile(e) {
-    e.preventDefault();
-    myProfile.name = document.getElementById('profileName').value;
-    myProfile.age = parseInt(document.getElementById('profileAge').value);
-    myProfile.city = document.getElementById('profileCity').value;
-    myProfile.photo = document.getElementById('profilePhoto').value || myProfile.photo;
-    myProfile.bio = document.getElementById('profileBio').value;
-    
-    localStorage.setItem('myProfile', JSON.stringify(myProfile));
-    closeEditProfile();
-    renderProfile();
+.user-box img,
+.mini-match img,
+.small-profile img {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  object-fit: cover;
 }
 
-// Cerrar editar perfil
-function closeEditProfile() {
-    document.getElementById('editProfileModal').classList.add('hidden');
+.user-box h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
 }
 
-// Abrir mensajes
-function openMessages() {
-    showView('messagesView');
-    renderMessages();
+.user-box p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
 }
 
-// Renderizar mensajes
-function renderMessages() {
-    const messagesList = document.getElementById('messagesList');
-    messagesList.innerHTML = '';
-
-    myProfile.matches.forEach(user => {
-        const messageItem = document.createElement('div');
-        messageItem.className = 'message-item';
-        messageItem.onclick = () => openChat(user);
-        messageItem.innerHTML = `
-            <img src="${user.photo}" alt="${user.name}" class="message-avatar">
-            <div class="message-content">
-                <div class="message-name">${user.name}</div>
-                <div class="message-text">${messages[user.id] ? messages[user.id][messages[user.id].length - 1].text : 'Escribe un mensaje...'}</div>
-            </div>
-            <div class="message-time">Ahora</div>
-        `;
-        messagesList.appendChild(messageItem);
-    });
-
-    if (myProfile.matches.length === 0) {
-        messagesList.innerHTML = '<p style="text-align: center; color: #b0b0b0; padding: 40px 20px;">Aún no tienes matches. ¡Sigue conociendo gente!</p>';
-    }
+.filters-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 16px 14px;
 }
 
-// Mostrar vista
-function showView(viewName) {
-    // Ocultar todas las vistas
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    
-    // Mostrar la vista seleccionada
-    document.getElementById(viewName).classList.add('active');
-    
-    // Actualizar botones de navegación
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.dataset.view === viewName) {
-            btn.classList.add('active');
-        }
-    });
+.filters-box h4,
+.panel-section h4 {
+  margin: 0 0 16px;
+  font-size: 18px;
 }
 
-// Volver a tarjetas
-function backToCards() {
-    showView('cardsView');
+.filters-box label {
+  display: block;
+  color: var(--muted);
+  margin-bottom: 14px;
 }
 
-// Cerrar modal
-function closeModal() {
-    document.getElementById('matchModal').classList.add('hidden');
+.range-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
 }
 
-// Setup navegación
-function setupNavigationButtons() {
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const viewName = btn.dataset.view;
-            showView(viewName);
-        });
-    });
+input[type="range"] {
+  width: 100%;
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, var(--pink), var(--pink-2));
+  border: none;
+  border-radius: 14px;
+  padding: 12px 16px;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 12px 30px rgba(255, 77, 125, 0.35);
+}
+
+.main-panel {
+  padding: 18px 14px 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.tab {
+  padding: 10px 16px;
+  border-radius: 12px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+  font-weight: 600;
+}
+
+.tab.active {
+  background: rgba(255, 77, 125, 0.12);
+  border-color: rgba(255, 77, 125, 0.2);
+  color: var(--text);
+}
+
+.match-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(255, 77, 125, 0.12), rgba(77, 215, 255, 0.08));
+  border: 1px solid rgba(255, 77, 125, 0.2);
+  border-radius: 16px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  display: none;
+}
+
+.banner-text {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+}
+
+.banner-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--green);
+  display: inline-block;
+}
+
+.match-banner button {
+  border: none;
+  border-radius: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  cursor: pointer;
+}
+
+.card-stage {
+  position: relative;
+  width: min(100%, 440px);
+  height: 620px;
+  margin: 0 auto;
+  perspective: 1000px;
+}
+
+.profile-card {
+  position: absolute;
+  inset: 0;
+  background: var(--panel);
+  border-radius: 30px;
+  overflow: hidden;
+  box-shadow: 0 28px 60px rgba(0,0,0,0.38);
+  border: 1px solid var(--line);
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  cursor: grab;
+}
+
+.profile-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-card:not(.active) {
+  opacity: 0.8;
+}
+
+.profile-card:nth-child(2) {
+  transform: scale(0.96) translateY(20px);
+}
+
+.profile-card:nth-child(3) {
+  transform: scale(0.92) translateY(36px);
+  opacity: 0.55;
+}
+
+.card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.1) 45%, transparent);
+}
+
+.card-meta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  padding: 24px;
+}
+
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.name-row h2 {
+  margin: 0;
+  font-size: clamp(1.6rem, 2vw, 2rem);
+}
+
+.verified {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #1ab7ff;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.card-meta p {
+  margin: 10px 0 0;
+  color: #f2f5fb;
+  font-weight: 500;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.tags span {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+.controls {
+  margin-top: 28px;
+  display: flex;
+  justify-content: center;
+  gap: 26px;
+}
+
+.control-btn {
+  width: 68px;
+  height: 68px;
+  border: none;
+  border-radius: 50%;
+  font-size: 2rem;
+  cursor: pointer;
+  box-shadow: 0 14px 30px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease;
+}
+
+.control-btn:hover {
+  transform: scale(1.06);
+}
+
+.control-btn.reject {
+  background: white;
+  color: #ff5c5c;
+}
+
+.control-btn.super {
+  background: #4db6ff;
+  color: white;
+  width: 58px;
+  height: 58px;
+}
+
+.control-btn.like {
+  background: linear-gradient(135deg, var(--pink), var(--pink-2));
+  color: white;
+}
+
+.panel-section {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px;
+}
+
+.match-mini-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mini-match {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.02);
+}
+
+.mini-match.active {
+  background: rgba(255, 77, 125, 0.12);
+}
+
+.mini-match div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mini-match span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.chat-box {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chat-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.online-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--green);
+  display: inline-block;
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bubble {
+  max-width: 80%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.bubble.incoming {
+  background: rgba(255,255,255,0.06);
+  color: white;
+  align-self: flex-start;
+}
+
+.bubble.outgoing {
+  background: linear-gradient(135deg, var(--pink), var(--pink-2));
+  color: white;
+  align-self: flex-end;
+}
+
+.chat-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.chat-input-row input {
+  flex: 1;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: white;
+  padding: 10px 12px;
+}
+
+.chat-input-row button {
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--pink), var(--pink-2));
+  color: white;
+  padding: 10px 14px;
+  font-weight: 700;
+}
+
+.small-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.small-profile div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.small-profile span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%) translateY(120px);
+  background: linear-gradient(135deg, var(--pink), var(--purple));
+  color: white;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 12px 20px;
+  box-shadow: 0 20px 40px rgba(255, 77, 125, 0.3);
+  transition: transform 0.25s ease;
+  z-index: 50;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Swipe animations */
+.profile-card.swipe-left {
+  transform: translateX(-180px) rotate(-18deg);
+  opacity: 0;
+}
+
+.profile-card.swipe-right {
+  transform: translateX(180px) rotate(18deg);
+  opacity: 0;
+}
+
+@media (max-width: 1100px) {
+  .app-shell {
+    grid-template-columns: 220px 1fr;
+  }
+
+  .right-panel {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .left-panel {
+    display: none;
+  }
+
+  .main-panel {
+    padding-top: 12px;
+  }
+
+  .card-stage {
+    height: 540px;
+  }
+
+  .controls {
+    gap: 18px;
+  }
 }
